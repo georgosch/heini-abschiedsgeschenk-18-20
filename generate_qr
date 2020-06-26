@@ -1,7 +1,43 @@
 #!/bin/bash
-rm -rvf QR
+
+# Looks for mp4, pdf, and jpg files in current dir and generates QR code png
+# images in QR/ output dir, prints HTML code to stdout.
+# Example usage: ./generate_qr > qr.html
+
+set -e
+
+# Clean up from previous QR generation run.
+rm -rf QR
 mkdir -p QR
-find * \( -name "*.mp4" -or -name "*.pdf" -or -name "*.jpg" \) -and -not -name "IMG*WA*.jpg" | while read f; do
-    echo QR/`basename "$f" | sed 's/\....$/.png/'`
-    qr "https://georgosch.github.io/heini-abschiedsgeschenk-18-20/$f" > QR/`basename "$f" | sed 's/\....$/.png/'`
+
+# Generate QR images and accumulate HTML img lines.
+IMG=""
+for f in `find * \( -name "*.mp4" -or -name "*.pdf" -or -name "*.jpg" \) -and -not -name "IMG*WA*.jpg"`; do
+    fname=QR/`basename "$f" | sed 's/\....$/.png/'`
+    IMG="$IMG"$'\n'"<p>$fname:<br/><img src=\"$fname\"></p>"
+    qr "https://georgosch.github.io/heini-abschiedsgeschenk-18-20/$f" > "$fname"
 done
+
+# Generate HTML.
+PRE=$(cat <<EOF
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>Heini Abschiedsgeschenk 3. & 4. Klasse 2018-2020 / QR Codes</title>
+  </head>
+
+  <body>
+    <h1>Heini Abschiedsgeschenk 3. & 4. Klasse 2018-2020 / QR Codes</h1>
+EOF
+)
+POST=$(cat <<EOF
+
+  </body>
+</html>
+EOF
+)
+
+echo "$PRE"
+echo "$IMG"
+echo "$POST"
